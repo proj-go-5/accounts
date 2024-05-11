@@ -2,8 +2,9 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/proj-go-5/accounts/internal/services"
 	"net/http"
+
+	"github.com/proj-go-5/accounts/internal/services"
 
 	"github.com/gorilla/mux"
 )
@@ -27,9 +28,6 @@ func (a *API) makeResponse(w http.ResponseWriter, data any, status int) {
 func (a *API) CreateRouter() *mux.Router {
 
 	r := mux.NewRouter()
-
-	r.HandleFunc("/api/v1/users/", a.UserListHandler).Methods(http.MethodGet)
-	r.HandleFunc("/api/v1/users/", a.UserCreateHandler).Methods(http.MethodPost)
 
 	r.HandleFunc("/api/v1/auth/admins/login/", a.LoginHandler).Methods(http.MethodPost)
 	r.HandleFunc("/api/v1/auth/admins/me/", a.TokenInfoHandler).Methods(http.MethodGet)

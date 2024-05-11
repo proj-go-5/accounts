@@ -2,8 +2,9 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/proj-go-5/accounts/internal/api/dto"
 	"net/http"
+
+	"github.com/proj-go-5/accounts/internal/api/dto"
 )
 
 func (a *API) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -18,6 +19,7 @@ func (a *API) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := a.service.Auth.Login(loginRequest.Login, loginRequest.Password)
 	if err != nil {
 		a.makeResponse(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	loginResponse := dto.LoginResponse{Token: token}
@@ -52,12 +54,12 @@ func (a *API) TokenInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !exists {
-		a.makeResponse(w, "token expired", http.StatusBadRequest)
+		a.makeResponse(w, "token expired", http.StatusUnauthorized)
 		return
 	}
 
 	if cacheToken != token {
-		a.makeResponse(w, "internal error", http.StatusInternalServerError)
+		a.makeResponse(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
