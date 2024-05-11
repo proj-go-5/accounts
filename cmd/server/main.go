@@ -15,8 +15,6 @@ import (
 
 var defaultPort = "8080"
 
-var defaultPort = "8080"
-
 func main() {
 	db, err := sqlx.Open("postgres", "user=accounts password=accounts dbname=accounts host=localhost port=5432 sslmode=disable")
 	if err != nil {
@@ -42,15 +40,6 @@ func main() {
 
 	r := a.CreateRouter()
 
-	port, ok := os.LookupEnv("ACCOUNTS_PORT")
-	if !ok {
-		fmt.Printf("'ACCOUNTS_PORT' env variable not found, runing the servier on a default port %s\n", defaultPort)
-		port = defaultPort
-	} else {
-		fmt.Printf("Running the server on port %s\n", port)
-	}
-
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), r); err != nil {
 	port, ok := os.LookupEnv("ACCOUNTS_PORT")
 	if !ok {
 		fmt.Printf("'ACCOUNTS_PORT' env variable not found, runing the servier on a default port %s\n", defaultPort)
