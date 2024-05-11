@@ -3,8 +3,9 @@ package services
 import (
 	"encoding/json"
 	"errors"
-	"github.com/proj-go-5/accounts/internal/entities"
 	"time"
+
+	"github.com/proj-go-5/accounts/internal/entities"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -18,7 +19,7 @@ func NewTokenService() *Token {
 	return &Token{}
 }
 
-func (t *Token) Generate(u *entities.User) (string, error) {
+func (t *Token) Generate(u *entities.Admin) (string, error) {
 	jsonUser, err := json.Marshal(u)
 	if err != nil {
 		return "", err
@@ -51,8 +52,8 @@ func (t *Token) VerifyToken(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func (t *Token) ExtractClaims(token *jwt.Token) (*entities.UserClaims, error) {
-	var userClaim entities.UserClaims
+func (t *Token) ExtractClaims(token *jwt.Token) (*entities.AdminClaims, error) {
+	var userClaim entities.AdminClaims
 	claims, ok := token.Claims.(jwt.MapClaims)
 
 	if !ok {

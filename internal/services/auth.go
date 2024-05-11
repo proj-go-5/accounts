@@ -22,7 +22,7 @@ func NewAuthService(u *User, c *Cache, t *Token) *Auth {
 	}
 }
 
-func (a *Auth) CheckPassword(user *entities.UserWithPassword) (bool, error) {
+func (a *Auth) CheckPassword(user *entities.AdminWithPassword) (bool, error) {
 	dbUser, err := a.userService.Get(user.Login)
 	if err != nil {
 		return false, err
@@ -35,7 +35,7 @@ func (a *Auth) CheckPassword(user *entities.UserWithPassword) (bool, error) {
 }
 
 func (a *Auth) Login(login, password string) (string, error) {
-	passwordOk, err := a.CheckPassword(&entities.UserWithPassword{
+	passwordOk, err := a.CheckPassword(&entities.AdminWithPassword{
 		Login:    login,
 		Password: password,
 	})
