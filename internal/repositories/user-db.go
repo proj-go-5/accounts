@@ -19,12 +19,8 @@ func (r *UserDbRepository) Save(a *entities.AdminWithPassword) (*entities.Admin,
 
 	var id int64
 
-	q := fmt.Sprintf(`INSERT INTO admin (login, password) VALUES ('%v', '%v') RETURNING id`, a.Login, a.Password)
-
-	err := r.db.QueryRow(q).Scan(&id)
-	if err != nil {
-		return nil, err
-	}
+	r.db.QueryRow("INSERT INTO admin (login, password) VALUES ($1, $2) RETURNING id",
+		a.Login, a.Password).Scan(&id)
 
 	a.ID = id
 
@@ -32,17 +28,16 @@ func (r *UserDbRepository) Save(a *entities.AdminWithPassword) (*entities.Admin,
 }
 
 func (r *UserDbRepository) List() ([]*entities.Admin, error) {
-	var admins []*entities.Admin
+	admins := make([]*entities.Admin, 0)
 
 	r.db.Select(&admins, "SELECT id, login FROM admin")
 	return admins, nil
 }
 
 func (r *UserDbRepository) Get(login string) (*entities.AdminWithPassword, error) {
-	var admins []*entities.AdminWithPassword
+	var admins []entities.AdminWithPassword
 
-	q := fmt.Sprintf("SELECT id, login, password FROM admin WHERE login = '%v'", login)
-	err := r.db.Select(&admins, q)
+	err := r.db.Select(&admins, "SELECT id, login, password FROM admin WHERE login = $1", login)
 
 	if err != nil {
 		return nil, err
@@ -56,5 +51,5 @@ func (r *UserDbRepository) Get(login string) (*entities.AdminWithPassword, error
 		return nil, fmt.Errorf("'Get' returns multiple users with login %v", login)
 	}
 
-	return admins[0], nil
+	return &admins[0], nil
 }
