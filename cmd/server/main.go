@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/proj-go-5/accounts/internal/api"
 	store "github.com/proj-go-5/accounts/internal/repositories"
 	"github.com/proj-go-5/accounts/internal/services"
@@ -14,7 +16,14 @@ import (
 var defaultPort = "8080"
 
 func main() {
-	userService := services.NewUserService(store.NewUserMemoryRepository())
+	db, err := sqlx.Open("postgres", "user=accounts password=accounts dbname=accounts host=localhost port=5432 sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	defer db.Close()
+
+	userService := services.NewUserService(store.NewUserDBRepository(db))
 	cacheService := services.NewCacheService(store.NewMemoryCacheRepository())
 	tokenService := services.NewTokenService()
 

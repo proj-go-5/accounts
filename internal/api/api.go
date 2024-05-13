@@ -29,6 +29,9 @@ func (a *API) CreateRouter() *mux.Router {
 
 	r := mux.NewRouter()
 
+	r.HandleFunc("/api/v1/users/", a.UserListHandler).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/users/", a.UserCreateHandler).Methods(http.MethodPost)
+
 	r.HandleFunc("/api/v1/auth/admins/login/", a.LoginHandler).Methods(http.MethodPost)
 	r.HandleFunc("/api/v1/auth/admins/me/", a.TokenInfoHandler).Methods(http.MethodGet)
 

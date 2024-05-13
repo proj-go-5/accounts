@@ -3,13 +3,14 @@ package services
 import (
 	"errors"
 	"fmt"
+
 	"github.com/proj-go-5/accounts/internal/entities"
 )
 
 type UserRepository interface {
-	Save(*entities.UserWithPassword) (*entities.User, error)
-	List() ([]*entities.User, error)
-	Get(string) (*entities.UserWithPassword, error)
+	Save(*entities.AdminWithPassword) (*entities.Admin, error)
+	List() ([]*entities.Admin, error)
+	Get(string) (*entities.AdminWithPassword, error)
 }
 
 type User struct {
@@ -20,11 +21,11 @@ func NewUserService(r UserRepository) *User {
 	return &User{repository: r}
 }
 
-func (u *User) List() ([]*entities.User, error) {
+func (u *User) List() ([]*entities.Admin, error) {
 	return u.repository.List()
 }
 
-func (u *User) Save(user *entities.UserWithPassword) (*entities.User, error) {
+func (u *User) Save(user *entities.AdminWithPassword) (*entities.Admin, error) {
 	login := user.Login
 
 	dbUser, err := u.repository.Get(login)
@@ -44,7 +45,7 @@ func (u *User) Save(user *entities.UserWithPassword) (*entities.User, error) {
 	return savedUser, nil
 }
 
-func (u *User) Get(login string) (*entities.UserWithPassword, error) {
+func (u *User) Get(login string) (*entities.AdminWithPassword, error) {
 	userWithPassword, err := u.repository.Get(login)
 	if err != nil {
 		return nil, err

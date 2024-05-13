@@ -2,9 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/proj-go-5/accounts/internal/api/dto"
 	"github.com/proj-go-5/accounts/internal/entities"
-	"net/http"
 )
 
 func (a *API) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +18,7 @@ func (a *API) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userId int64
-	user, err := a.service.User.Save(&entities.UserWithPassword{
+	user, err := a.service.User.Save(&entities.AdminWithPassword{
 		ID:       userId,
 		Login:    createUserRequest.Login,
 		Password: createUserRequest.Password,
