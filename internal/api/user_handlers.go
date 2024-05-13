@@ -6,6 +6,7 @@ import (
 
 	"github.com/proj-go-5/accounts/internal/api/dto"
 	"github.com/proj-go-5/accounts/internal/entities"
+	"github.com/proj-go-5/accounts/pkg/accountsio"
 )
 
 func (a *API) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +14,7 @@ func (a *API) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&createUserRequest)
 	if err != nil {
-		a.makeResponse(w, err.Error(), http.StatusBadRequest)
+		accountsio.MakeResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -25,20 +26,20 @@ func (a *API) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		a.makeResponse(w, err.Error(), http.StatusBadRequest)
+		accountsio.MakeResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	a.makeResponse(w, user, http.StatusCreated)
+	accountsio.MakeResponse(w, user, http.StatusCreated)
 }
 
 func (a *API) UserListHandler(w http.ResponseWriter, r *http.Request) {
 	users, err := a.service.User.List()
 
 	if err != nil {
-		a.makeResponse(w, err.Error(), http.StatusInternalServerError)
+		accountsio.MakeResponse(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	a.makeResponse(w, users, http.StatusOK)
+	accountsio.MakeResponse(w, users, http.StatusOK)
 }
