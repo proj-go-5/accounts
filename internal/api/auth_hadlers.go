@@ -46,7 +46,7 @@ func (a *API) TokenInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	login := claims.Login
+	login := claims.Admin.Login
 
 	cacheToken, exists, err := a.service.Cache.Get(login)
 	if err != nil {

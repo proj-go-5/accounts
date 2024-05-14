@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/proj-go-5/accounts/internal/entities"
@@ -26,8 +27,8 @@ func (t *Token) Generate(u *entities.Admin) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": string(jsonUser),
-		"exp":  time.Now().Add(time.Hour * 24).Unix(),
+		"admin": string(jsonUser),
+		"exp":   fmt.Sprintf("%v", time.Now().Add(time.Second*30).Unix()),
 	})
 
 	signedToken, err := token.SignedString([]byte(tokenSecret))
@@ -42,6 +43,7 @@ func (t *Token) VerifyToken(tokenString string) (*jwt.Token, error) {
 		return []byte(tokenSecret), nil
 	})
 	if err != nil {
+		fmt.Println(222)
 		return nil, err
 	}
 
@@ -52,22 +54,23 @@ func (t *Token) VerifyToken(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func (t *Token) ExtractClaims(token *jwt.Token) (*entities.AdminClaims, error) {
-	var userClaim entities.AdminClaims
+func (t *Token) ExtractClaims(token *jwt.Token) (result *entities.TokenClaims, error error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 
 	if !ok {
-		return &userClaim, errors.New("invalid claims format")
+		return result, errors.New("invalid claims format")
 	}
 
-	userJson, ok := claims["user"].(string)
-	if !ok {
-		return &userClaim, errors.New("subject claim not found")
-	}
+	var admin entities.Admin
+	adminJson := fmt.Sprintf("%v", claims["admin"])
 
-	if err := json.Unmarshal([]byte(userJson), &userClaim); err != nil {
-		return &userClaim, err
-	}
+	json.Unmarshal([]byte(adminJson), &admin)
 
-	return &userClaim, nil
+	fmt.Println("admin: ", admin, admin.ID, admin.Login)
+	res := &entities.TokenClaims{
+		Exp:   claims["exp"].(int64),
+		Admin: admin}
+
+	fmt.Println("res : ", res)
+	return res, nil
 }

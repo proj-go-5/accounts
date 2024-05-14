@@ -18,7 +18,12 @@ func (u *AdminWithPassword) WithoutPassword() *Admin {
 	}
 }
 
-type AdminClaims struct {
-	ID    int64  `json:"id"`
-	Login string `json:"login"`
+type TokenClaims struct {
+	Admin Admin `json:"admin"`
+	Exp   int64 `json:"exp"`
 }
+
+// type TokenClaims2 struct {
+// 	Admin Admin `json:"admin"`
+// 	Exp   time.DateTime `json:"exp"`
+// }
