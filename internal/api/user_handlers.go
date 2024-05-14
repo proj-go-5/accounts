@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/proj-go-5/accounts/internal/api/dto"
@@ -34,6 +35,11 @@ func (a *API) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) UserListHandler(w http.ResponseWriter, r *http.Request) {
+	userId, _ := r.Context().Value("UserId").(string)
+	userLogin, _ := r.Context().Value("UserLogin").(string)
+
+	log.Printf("%v for Admin id = %v username = %v", r.URL, userId, userLogin)
+
 	users, err := a.service.User.List()
 
 	if err != nil {

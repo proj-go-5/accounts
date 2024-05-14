@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -38,7 +39,10 @@ func main() {
 
 	userService := services.NewUserService(store.NewUserDBRepository(db))
 	cacheService := services.NewCacheService(store.NewMemoryCacheRepository())
-	tokenService := services.NewTokenService()
+
+	jwtSecret := envService.Get("JWT_SECRET", "secret")
+	jwtExpiration, _ := strconv.Atoi(envService.Get("JWT_EXPIRATION_HOURS", "24"))
+	tokenService := services.NewTokenService(jwtSecret, jwtExpiration)
 
 	appService := &services.AppService{
 		User:  userService,
@@ -51,7 +55,11 @@ func main() {
 
 	a := api.New(appService)
 
-	r := a.CreateRouter()
+	r, err := a.CreateRouter()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
 	serverPort := envService.Get("ACCOUNTS_SERVER_PORT", "8080")
 

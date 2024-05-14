@@ -10,13 +10,13 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-var tokenSecret = "replace_me_by_env_var!!!"
-
 type Token struct {
+	secret     string
+	expiration int
 }
 
-func NewTokenService() *Token {
-	return &Token{}
+func NewTokenService(secret string, expiration int) *Token {
+	return &Token{secret: secret, expiration: expiration}
 }
 
 func (t *Token) Generate(u *entities.Admin) (string, error) {
@@ -26,11 +26,11 @@ func (t *Token) Generate(u *entities.Admin) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": string(jsonUser),
-		"exp":  time.Now().Add(time.Hour * 24).Unix(),
+		"admin": string(jsonUser),
+		"exp":   time.Now().Add(time.Hour * time.Duration(t.expiration)).Unix(),
 	})
 
-	signedToken, err := token.SignedString([]byte(tokenSecret))
+	signedToken, err := token.SignedString([]byte(t.secret))
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +39,7 @@ func (t *Token) Generate(u *entities.Admin) (string, error) {
 
 func (t *Token) VerifyToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(tokenSecret), nil
+		return []byte(t.secret), nil
 	})
 	if err != nil {
 		return nil, err
@@ -60,9 +60,9 @@ func (t *Token) ExtractClaims(token *jwt.Token) (*entities.AdminClaims, error) {
 		return &userClaim, errors.New("invalid claims format")
 	}
 
-	userJson, ok := claims["user"].(string)
+	userJson, ok := claims["admin"].(string)
 	if !ok {
-		return &userClaim, errors.New("subject claim not found")
+		return &userClaim, errors.New("admins claims not found")
 	}
 
 	if err := json.Unmarshal([]byte(userJson), &userClaim); err != nil {
