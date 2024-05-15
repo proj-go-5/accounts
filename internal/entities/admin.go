@@ -1,24 +1,19 @@
 package entities
 
-type User struct {
+type Admin struct {
 	ID    int64  `json:"id"`
 	Login string `json:"login"`
 }
 
-type UserWithPassword struct {
+type AdminWithPassword struct {
 	ID       int64  `json:"id"`
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
 
-func (u *UserWithPassword) WithoutPassword() *User {
-	return &User{
+func (u *AdminWithPassword) WithoutPassword() *Admin {
+	return &Admin{
 		ID:    u.ID,
 		Login: u.Login,
 	}
-}
-
-type UserClaims struct {
-	ID    int64  `json:"id"`
-	Login string `json:"login"`
 }
