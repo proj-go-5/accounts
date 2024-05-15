@@ -41,4 +41,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Admin '%v' successfully created\n", login)
 }

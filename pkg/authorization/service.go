@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/proj-go-5/accounts/pkg/accountsio"
 )
@@ -20,11 +21,22 @@ func NewAuthServie(j *JwtService) *Service {
 
 func (s *Service) AdminMiddleware(nextHandler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token == "" {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
 			accountsio.MakeResponse(w, "unautorized", http.StatusUnauthorized)
 			return
 		}
+
+		tokenParts := strings.Split(authHeader, " ")
+
+		tokenPrefix := "Bearer"
+
+		if len(tokenParts) != 2 || tokenParts[0] != tokenPrefix {
+			errorMsg := fmt.Sprintf("The value of the Authorization header must be of the next format: '%v <you_token_value>'", tokenPrefix)
+			accountsio.MakeResponse(w, errorMsg, http.StatusUnauthorized)
+			return
+		}
+		token := tokenParts[1]
 
 		jwtToken, err := s.jwtService.VerifyToken(token)
 
