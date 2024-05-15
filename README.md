@@ -37,6 +37,10 @@ Create db tables:
 ```sh
 make migration_up
 ```
+Create admin:
+```sh
+make create_admin LOGIN=admin PASSWORD=admin
+```
 
 Up server:
 ```sh
