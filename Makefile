@@ -14,5 +14,8 @@ migration_up:
 migration_down:
 	migrate -path internal/db/migrations/ -database "$(DB_DSN)" -verbose down
 
+create_admin:
+	go run cmd/scripts/createadmin.go
+
 start:
 	go run cmd/server/main.go
