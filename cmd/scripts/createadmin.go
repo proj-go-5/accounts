@@ -27,7 +27,8 @@ func main() {
 	}
 	defer adminDbRepository.Db.Close()
 
-	adminService := services.NewAdminService(adminDbRepository)
+	hashService := services.NewHashService()
+	adminService := services.NewAdminService(adminDbRepository, hashService)
 
 	login := os.Args[1]
 	password := os.Args[2]
