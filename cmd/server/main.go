@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/proj-go-5/accounts/internal/api"
@@ -37,8 +38,38 @@ func main() {
 	}
 	defer db.Close()
 
+	redisAddres := fmt.Sprintf("%v:%v",
+		envService.Get("ACCOUNTS_REDIS_HOST", "localhost"),
+		envService.Get("ACCOUNTS_REDIS_PORT", "6379"),
+	)
+
+	redisDb, err := strconv.Atoi(envService.Get("ACCOUNTS_REDIS_DB", "0"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	redisCli := redis.NewClient(&redis.Options{
+		Addr:     redisAddres,
+		Password: envService.Get("ACCOUNTS_REDIS_PASSWORD", ""),
+		DB:       redisDb,
+	})
+	defer redisCli.Close()
+
+	var cacheStore services.CacheRepository
+
+	err = redisCli.Ping().Err()
+
+	if err != nil {
+		log.Fatal(err)
+		cacheStore = store.NewMemoryCacheRepository()
+		log.Println("memeory cache used")
+	} else {
+		cacheStore = store.NewRedisCacheRepository(redisCli)
+		log.Println("redis cache used")
+	}
+
 	adminService := services.NewAdminService(store.NewAdminDBRepository(db))
-	cacheService := services.NewCacheService(store.NewMemoryCacheRepository())
+	cacheService := services.NewCacheService(cacheStore)
 
 	jwtSecret := envService.Get("JWT_SECRET", "secret")
 	jwtExpiration, _ := strconv.Atoi(envService.Get("JWT_EXPIRATION_HOURS", "24"))
@@ -63,7 +94,7 @@ func main() {
 
 	serverPort := envService.Get("ACCOUNTS_SERVER_PORT", "8080")
 
-	fmt.Printf("Runing servier on %v port\n", serverPort)
+	log.Printf("Runing servier on %v port\n", serverPort)
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), r); err != nil {
 		log.Printf("Server run error: %s", err)

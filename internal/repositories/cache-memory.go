@@ -1,6 +1,9 @@
 package store
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type MemoryCache struct {
 	mx    sync.Mutex
@@ -21,7 +24,7 @@ func (c *MemoryCache) Get(key string) (value string, exists bool, error error) {
 	return value, exists, nil
 }
 
-func (c *MemoryCache) Set(key, value string, ttl int) error {
+func (c *MemoryCache) Set(key, value string, ttl time.Duration) error {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 

@@ -1,8 +1,12 @@
 package services
 
+import (
+	"time"
+)
+
 type CacheRepository interface {
 	Get(key string) (value string, exists bool, error error)
-	Set(key, value string, ttl int) error
+	Set(key, value string, ttl time.Duration) error
 }
 
 type Cache struct {
@@ -17,6 +21,6 @@ func (c *Cache) Get(key string) (value string, exists bool, error error) {
 	return c.repository.Get(key)
 }
 
-func (c *Cache) Set(key, value string, ttl int) error {
+func (c *Cache) Set(key, value string, ttl time.Duration) error {
 	return c.repository.Set(key, value, ttl)
 }
