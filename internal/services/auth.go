@@ -2,12 +2,13 @@ package services
 
 import (
 	"errors"
+	"time"
 
 	"github.com/proj-go-5/accounts/internal/entities"
 	"github.com/proj-go-5/accounts/pkg/authorization"
 )
 
-var defaultTtl = 60
+var defaultTtl = 24 * time.Hour
 
 type Auth struct {
 	adminService *Admin
