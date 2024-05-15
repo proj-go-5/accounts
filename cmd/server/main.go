@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/proj-go-5/accounts/pkg/jwt"
-
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/proj-go-5/accounts/internal/api"
 	store "github.com/proj-go-5/accounts/internal/repositories"
 	"github.com/proj-go-5/accounts/internal/services"
+	"github.com/proj-go-5/accounts/pkg/authorization"
 )
 
 func main() {
@@ -43,7 +42,7 @@ func main() {
 
 	jwtSecret := envService.Get("JWT_SECRET", "secret")
 	jwtExpiration, _ := strconv.Atoi(envService.Get("JWT_EXPIRATION_HOURS", "24"))
-	jwtService := jwt.NewJwtService(jwtSecret, jwtExpiration)
+	jwtService := authorization.NewJwtService(jwtSecret, jwtExpiration)
 
 	appService := &services.AppService{
 		Admin: adminService,

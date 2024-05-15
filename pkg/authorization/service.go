@@ -6,16 +6,15 @@ import (
 	"net/http"
 
 	"github.com/proj-go-5/accounts/pkg/accountsio"
-	"github.com/proj-go-5/accounts/pkg/jwt"
 )
 
 type Service struct {
-	jwtService *jwt.Service
+	jwtService *JwtService
 }
 
-func NewAuthServie(t *jwt.Service) *Service {
+func NewAuthServie(j *JwtService) *Service {
 	return &Service{
-		jwtService: t,
+		jwtService: j,
 	}
 }
 

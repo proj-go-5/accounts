@@ -4,11 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/proj-go-5/accounts/internal/services"
 	"github.com/proj-go-5/accounts/pkg/authorization"
-	"github.com/proj-go-5/accounts/pkg/jwt"
-
-	"github.com/gorilla/mux"
 )
 
 type API struct {
@@ -32,7 +30,7 @@ func (a *API) CreateRouter() (*mux.Router, error) {
 
 	jwtSecret := envService.Get("JWT_SECRET", "secret")
 	jwtExpiration, _ := strconv.Atoi(envService.Get("JWT_EXPIRATION_HOURS", "24"))
-	jwtService := jwt.NewJwtService(jwtSecret, jwtExpiration)
+	jwtService := authorization.NewJwtService(jwtSecret, jwtExpiration)
 
 	authorizationService := authorization.NewAuthServie(jwtService)
 

@@ -3,10 +3,8 @@ package services
 import (
 	"errors"
 
-	"github.com/proj-go-5/accounts/pkg/jwt"
-
 	"github.com/proj-go-5/accounts/internal/entities"
-	pkgentities "github.com/proj-go-5/accounts/pkg/entities"
+	"github.com/proj-go-5/accounts/pkg/authorization"
 )
 
 var defaultTtl = 60
@@ -14,14 +12,14 @@ var defaultTtl = 60
 type Auth struct {
 	adminService *Admin
 	cacheService *Cache
-	jwtService   *jwt.Service
+	jwtService   *authorization.JwtService
 }
 
-func NewAuthService(a *Admin, c *Cache, t *jwt.Service) *Auth {
+func NewAuthService(a *Admin, c *Cache, j *authorization.JwtService) *Auth {
 	return &Auth{
 		adminService: a,
 		cacheService: c,
-		jwtService:   t,
+		jwtService:   j,
 	}
 }
 
@@ -62,7 +60,7 @@ func (a *Auth) Login(login, password string) (string, error) {
 			return "", err
 		}
 
-		adminClaims := &pkgentities.AdminClaims{
+		adminClaims := &authorization.AdminClaims{
 			ID:    admin.ID,
 			Login: admin.Login,
 		}
