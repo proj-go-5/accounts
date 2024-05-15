@@ -17,8 +17,3 @@ func (u *AdminWithPassword) WithoutPassword() *Admin {
 		Login: u.Login,
 	}
 }
-
-type AdminClaims struct {
-	ID    int64  `json:"id"`
-	Login string `json:"login"`
-}

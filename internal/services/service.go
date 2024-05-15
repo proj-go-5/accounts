@@ -1,8 +1,10 @@
 package services
 
+import "github.com/proj-go-5/accounts/pkg/authorization"
+
 type AppService struct {
-	User  *User
-	Token *Token
+	Admin *Admin
+	Jwt   *authorization.JwtService
 	Cache *Cache
 	Auth  *Auth
 }

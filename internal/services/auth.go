@@ -4,32 +4,33 @@ import (
 	"errors"
 
 	"github.com/proj-go-5/accounts/internal/entities"
+	"github.com/proj-go-5/accounts/pkg/authorization"
 )
 
 var defaultTtl = 60
 
 type Auth struct {
-	userService  *User
+	adminService *Admin
 	cacheService *Cache
-	tokenService *Token
+	jwtService   *authorization.JwtService
 }
 
-func NewAuthService(u *User, c *Cache, t *Token) *Auth {
+func NewAuthService(a *Admin, c *Cache, j *authorization.JwtService) *Auth {
 	return &Auth{
-		userService:  u,
+		adminService: a,
 		cacheService: c,
-		tokenService: t,
+		jwtService:   j,
 	}
 }
 
-func (a *Auth) CheckPassword(user *entities.AdminWithPassword) (bool, error) {
-	dbUser, err := a.userService.Get(user.Login)
+func (a *Auth) CheckPassword(admin *entities.AdminWithPassword) (bool, error) {
+	dbAdmin, err := a.adminService.Get(admin.Login)
 	if err != nil {
 		return false, err
 	}
 
-	if dbUser != nil {
-		return dbUser.Password == user.Password, nil
+	if dbAdmin != nil {
+		return dbAdmin.Password == admin.Password, nil
 	}
 	return false, nil
 }
@@ -54,12 +55,16 @@ func (a *Auth) Login(login, password string) (string, error) {
 	}
 
 	if !exists {
-		user, err := a.userService.Get(login)
+		admin, err := a.adminService.Get(login)
 		if err != nil {
 			return "", err
 		}
 
-		token, err = a.tokenService.Generate(user.WithoutPassword())
+		adminClaims := &authorization.AdminClaims{
+			ID:    admin.ID,
+			Login: admin.Login,
+		}
+		token, err = a.jwtService.Generate(adminClaims)
 
 		if err != nil {
 			return "", err
