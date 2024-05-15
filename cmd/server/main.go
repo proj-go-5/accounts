@@ -6,16 +6,17 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/proj-go-5/accounts/pkg/jwt"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/proj-go-5/accounts/internal/api"
 	store "github.com/proj-go-5/accounts/internal/repositories"
 	"github.com/proj-go-5/accounts/internal/services"
-	"github.com/proj-go-5/accounts/pkg/env"
 )
 
 func main() {
-	envService, err := env.NewEnvService(".env")
+	envService, err := services.NewEnvService(".env")
 	if err != nil {
 		log.Println(err)
 		return
@@ -37,19 +38,19 @@ func main() {
 	}
 	defer db.Close()
 
-	userService := services.NewUserService(store.NewUserDBRepository(db))
+	adminService := services.NewAdminService(store.NewAdminDBRepository(db))
 	cacheService := services.NewCacheService(store.NewMemoryCacheRepository())
 
 	jwtSecret := envService.Get("JWT_SECRET", "secret")
 	jwtExpiration, _ := strconv.Atoi(envService.Get("JWT_EXPIRATION_HOURS", "24"))
-	tokenService := services.NewTokenService(jwtSecret, jwtExpiration)
+	jwtService := jwt.NewJwtService(jwtSecret, jwtExpiration)
 
 	appService := &services.AppService{
-		User:  userService,
-		Token: tokenService,
+		Admin: adminService,
+		Jwt:   jwtService,
 		Cache: cacheService,
 		Auth: services.NewAuthService(
-			userService, cacheService, tokenService,
+			adminService, cacheService, jwtService,
 		),
 	}
 

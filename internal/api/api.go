@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/proj-go-5/accounts/internal/services"
-	"github.com/proj-go-5/accounts/pkg/env"
-	"github.com/proj-go-5/accounts/pkg/middlewares"
+	"github.com/proj-go-5/accounts/pkg/authorization"
+	"github.com/proj-go-5/accounts/pkg/jwt"
 
 	"github.com/gorilla/mux"
 )
@@ -25,22 +25,21 @@ func (a *API) CreateRouter() (*mux.Router, error) {
 
 	r := mux.NewRouter()
 
-	envService, err := env.NewEnvService(".env")
+	envService, err := services.NewEnvService(".env")
 	if err != nil {
 		return r, err
 	}
 
 	jwtSecret := envService.Get("JWT_SECRET", "secret")
 	jwtExpiration, _ := strconv.Atoi(envService.Get("JWT_EXPIRATION_HOURS", "24"))
-	tokenService := services.NewTokenService(jwtSecret, jwtExpiration)
+	jwtService := jwt.NewJwtService(jwtSecret, jwtExpiration)
 
-	authMiddlewareService := middlewares.NewAuthServie(tokenService)
+	authorizationService := authorization.NewAuthServie(jwtService)
 
-	r.HandleFunc("/api/v1/users/", authMiddlewareService.Check(a.UserListHandler)).Methods(http.MethodGet)
-	r.HandleFunc("/api/v1/users/", authMiddlewareService.Check(a.UserCreateHandler)).Methods(http.MethodPost)
+	r.HandleFunc("/api/v1/users/", authorizationService.AdminMiddleware(a.AdminListHandler)).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/users/", authorizationService.AdminMiddleware(a.AdminCreateHandler)).Methods(http.MethodPost)
 
 	r.HandleFunc("/api/v1/auth/admins/login/", a.LoginHandler).Methods(http.MethodPost)
-	r.HandleFunc("/api/v1/auth/admins/me/", a.TokenInfoHandler).Methods(http.MethodGet)
 
 	return r, nil
 }

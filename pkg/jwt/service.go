@@ -1,25 +1,24 @@
-package services
+package jwt
 
 import (
 	"encoding/json"
 	"errors"
 	"time"
 
-	"github.com/proj-go-5/accounts/internal/entities"
-
 	"github.com/golang-jwt/jwt"
+	"github.com/proj-go-5/accounts/pkg/entities"
 )
 
-type Token struct {
+type Service struct {
 	secret     string
 	expiration int
 }
 
-func NewTokenService(secret string, expiration int) *Token {
-	return &Token{secret: secret, expiration: expiration}
+func NewJwtService(secret string, expiration int) *Service {
+	return &Service{secret: secret, expiration: expiration}
 }
 
-func (t *Token) Generate(u *entities.Admin) (string, error) {
+func (s *Service) Generate(u *entities.AdminClaims) (string, error) {
 	jsonUser, err := json.Marshal(u)
 	if err != nil {
 		return "", err
@@ -27,19 +26,19 @@ func (t *Token) Generate(u *entities.Admin) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"admin": string(jsonUser),
-		"exp":   time.Now().Add(time.Hour * time.Duration(t.expiration)).Unix(),
+		"exp":   time.Now().Add(time.Hour * time.Duration(s.expiration)).Unix(),
 	})
 
-	signedToken, err := token.SignedString([]byte(t.secret))
+	signedToken, err := token.SignedString([]byte(s.secret))
 	if err != nil {
 		return "", err
 	}
 	return signedToken, nil
 }
 
-func (t *Token) VerifyToken(tokenString string) (*jwt.Token, error) {
+func (s *Service) VerifyToken(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(t.secret), nil
+		return []byte(s.secret), nil
 	})
 	if err != nil {
 		return nil, err
@@ -52,7 +51,7 @@ func (t *Token) VerifyToken(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func (t *Token) ExtractClaims(token *jwt.Token) (*entities.AdminClaims, error) {
+func (s *Service) ExtractClaims(token *jwt.Token) (*entities.AdminClaims, error) {
 	var userClaim entities.AdminClaims
 	claims, ok := token.Claims.(jwt.MapClaims)
 

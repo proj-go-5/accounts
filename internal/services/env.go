@@ -1,4 +1,4 @@
-package env
+package services
 
 import (
 	"os"
@@ -11,7 +11,7 @@ type Service struct {
 }
 
 func NewEnvService(variablesFilePath string) (*Service, error) {
-	err := godotenv.Overload(".env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		return nil, err
 	}
