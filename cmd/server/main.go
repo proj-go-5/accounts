@@ -6,9 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-redis/redis"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"github.com/proj-go-5/accounts/internal/api"
 	store "github.com/proj-go-5/accounts/internal/repositories"
 	"github.com/proj-go-5/accounts/internal/services"
@@ -22,53 +19,21 @@ func main() {
 		return
 	}
 
-	dbDataSource := fmt.Sprintf("user=%v password=%v dbname=%v host=%v port=%v sslmode=%v",
-		envService.Get("ACCOUNTS_DB_USER", "accouunts"),
-		envService.Get("ACCOUNTS_DB_PASSWORD", "accouunts"),
-		envService.Get("ACCOUNTS_DB_NAME", "accouunts"),
-		envService.Get("ACCOUNTS_DB_URL", "localhost"),
-		envService.Get("ACCOUNTS_DB_PORT", "5432"),
-		envService.Get("ACCOUNTS_DB_SSL_MODE", "disable"),
-	)
-
-	db, err := sqlx.Open("postgres", dbDataSource)
+	adminDbRepository, err := store.NewAdminDBRepository(envService)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
-	defer db.Close()
+	defer adminDbRepository.Db.Close()
 
-	redisAddres := fmt.Sprintf("%v:%v",
-		envService.Get("ACCOUNTS_REDIS_HOST", "localhost"),
-		envService.Get("ACCOUNTS_REDIS_PORT", "6379"),
-	)
-
-	redisDb, err := strconv.Atoi(envService.Get("ACCOUNTS_REDIS_DB", "0"))
+	cacheStore, err := store.NewRedisCacheRepository(envService)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
+	defer cacheStore.Cli.Close()
 
-	redisCli := redis.NewClient(&redis.Options{
-		Addr:     redisAddres,
-		Password: envService.Get("ACCOUNTS_REDIS_PASSWORD", ""),
-		DB:       redisDb,
-	})
-	defer redisCli.Close()
-
-	var cacheStore services.CacheRepository
-
-	err = redisCli.Ping().Err()
-
-	if err != nil {
-		log.Fatal(err)
-		cacheStore = store.NewMemoryCacheRepository()
-		log.Println("memeory cache used")
-	} else {
-		cacheStore = store.NewRedisCacheRepository(redisCli)
-		log.Println("redis cache used")
-	}
-
-	adminService := services.NewAdminService(store.NewAdminDBRepository(db))
+	adminService := services.NewAdminService(adminDbRepository)
 	cacheService := services.NewCacheService(cacheStore)
 
 	jwtSecret := envService.Get("JWT_SECRET", "secret")
