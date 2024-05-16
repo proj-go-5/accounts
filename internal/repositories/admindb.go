@@ -10,31 +10,18 @@ import (
 )
 
 type AdminDbRepository struct {
-	Db *sqlx.DB
+	db *sqlx.DB
 }
 
-func NewAdminDBRepository(e *services.Env) (*AdminDbRepository, error) {
-	dbDataSource := fmt.Sprintf("user=%v password=%v dbname=%v host=%v port=%v sslmode=%v",
-		e.Get("ACCOUNTS_DB_USER", "accouunts"),
-		e.Get("ACCOUNTS_DB_PASSWORD", "accouunts"),
-		e.Get("ACCOUNTS_DB_NAME", "accouunts"),
-		e.Get("ACCOUNTS_DB_URL", "localhost"),
-		e.Get("ACCOUNTS_DB_PORT", "5432"),
-		e.Get("ACCOUNTS_DB_SSL_MODE", "disable"),
-	)
-
-	db, err := sqlx.Open("postgres", dbDataSource)
-	if err != nil {
-		return nil, err
-	}
-	return &AdminDbRepository{Db: db}, nil
+func NewAdminDBRepository(db *sqlx.DB) services.AdminRepository {
+	return &AdminDbRepository{db: db}
 }
 
 func (r *AdminDbRepository) Save(a *entities.AdminWithPassword) (*entities.Admin, error) {
 
 	var id int64
 
-	r.Db.QueryRow("INSERT INTO admin (login, password) VALUES ($1, $2) RETURNING id",
+	r.db.QueryRow("INSERT INTO admin (login, password) VALUES ($1, $2) RETURNING id",
 		a.Login, a.Password).Scan(&id)
 
 	a.ID = id
@@ -45,14 +32,14 @@ func (r *AdminDbRepository) Save(a *entities.AdminWithPassword) (*entities.Admin
 func (r *AdminDbRepository) List() ([]*entities.Admin, error) {
 	admins := make([]*entities.Admin, 0)
 
-	r.Db.Select(&admins, "SELECT id, login FROM admin")
+	r.db.Select(&admins, "SELECT id, login FROM admin")
 	return admins, nil
 }
 
 func (r *AdminDbRepository) Get(login string) (*entities.AdminWithPassword, error) {
 	var admins []entities.AdminWithPassword
 
-	err := r.Db.Select(&admins, "SELECT id, login, password FROM admin WHERE login = $1", login)
+	err := r.db.Select(&admins, "SELECT id, login, password FROM admin WHERE login = $1", login)
 
 	if err != nil {
 		return nil, err
@@ -67,4 +54,8 @@ func (r *AdminDbRepository) Get(login string) (*entities.AdminWithPassword, erro
 	}
 
 	return &admins[0], nil
+}
+
+func (r *AdminDbRepository) Close() {
+	r.db.Close()
 }
