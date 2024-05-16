@@ -27,7 +27,8 @@ func main() {
 	}
 	defer adminDbRepository.Db.Close()
 
-	adminService := services.NewAdminService(adminDbRepository)
+	hashService := services.NewHashService()
+	adminService := services.NewAdminService(adminDbRepository, hashService)
 
 	login := os.Args[1]
 	password := os.Args[2]
@@ -40,4 +41,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Admin '%v' successfully created\n", login)
 }

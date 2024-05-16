@@ -33,7 +33,8 @@ func main() {
 	}
 	defer cacheStore.Cli.Close()
 
-	adminService := services.NewAdminService(adminDbRepository)
+	hashService := services.NewHashService()
+	adminService := services.NewAdminService(adminDbRepository, hashService)
 	cacheService := services.NewCacheService(cacheStore)
 
 	jwtSecret := envService.Get("JWT_SECRET", "secret")
@@ -45,7 +46,7 @@ func main() {
 		Jwt:   jwtService,
 		Cache: cacheService,
 		Auth: services.NewAuthService(
-			adminService, cacheService, jwtService,
+			adminService, cacheService, jwtService, hashService,
 		),
 	}
 

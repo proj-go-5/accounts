@@ -14,13 +14,15 @@ type Auth struct {
 	adminService *Admin
 	cacheService *Cache
 	jwtService   *authorization.JwtService
+	hashService  *Hash
 }
 
-func NewAuthService(a *Admin, c *Cache, j *authorization.JwtService) *Auth {
+func NewAuthService(a *Admin, c *Cache, j *authorization.JwtService, h *Hash) *Auth {
 	return &Auth{
 		adminService: a,
 		cacheService: c,
 		jwtService:   j,
+		hashService:  h,
 	}
 }
 
@@ -31,7 +33,7 @@ func (a *Auth) CheckPassword(admin *entities.AdminWithPassword) (bool, error) {
 	}
 
 	if dbAdmin != nil {
-		return dbAdmin.Password == admin.Password, nil
+		return a.hashService.CheckPasswordHash(admin.Password, dbAdmin.Password), nil
 	}
 	return false, nil
 }
