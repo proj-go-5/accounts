@@ -4,14 +4,16 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/proj-go-5/accounts/internal/entities"
+	"github.com/proj-go-5/accounts/internal/services"
 )
 
 type AdminDbRepository struct {
 	db *sqlx.DB
 }
 
-func NewAdminDBRepository(db *sqlx.DB) *AdminDbRepository {
+func NewAdminDBRepository(db *sqlx.DB) services.AdminRepository {
 	return &AdminDbRepository{db: db}
 }
 

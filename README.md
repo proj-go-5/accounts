@@ -28,14 +28,18 @@ git clone git@github.com:proj-go-5/accounts.git
 ##### Prepare env envoronment:
 create .env file (see .env.example)
 
-Up db server:
+Up db and redis server:
 ```sh
-docker-compose -f internal/db/docker-compose.yml up
+docker-compose up
 ```
 
 Create db tables:
 ```sh
 make migration_up
+```
+Create admin:
+```sh
+make create_admin LOGIN=admin PASSWORD=admin
 ```
 
 Up server:

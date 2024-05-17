@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/proj-go-5/accounts/internal/entities"
@@ -14,11 +13,12 @@ type AdminRepository interface {
 }
 
 type Admin struct {
-	repository AdminRepository
+	repository  AdminRepository
+	hashService *Hash
 }
 
-func NewAdminService(r AdminRepository) *Admin {
-	return &Admin{repository: r}
+func NewAdminService(r AdminRepository, h *Hash) *Admin {
+	return &Admin{repository: r, hashService: h}
 }
 
 func (a *Admin) List() ([]*entities.Admin, error) {
@@ -34,9 +34,15 @@ func (a *Admin) Save(admin *entities.AdminWithPassword) (*entities.Admin, error)
 	}
 
 	if dbAdmin != nil {
-		return nil, errors.New(fmt.Sprintf("admin with login %v already exists", login))
+		return nil, fmt.Errorf("admin with login %v already exists", login)
 	}
 
+	hash, err := a.hashService.HashPassword(admin.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	admin.Password = hash
 	savedAdmin, err := a.repository.Save(admin)
 	if err != nil {
 		return nil, err

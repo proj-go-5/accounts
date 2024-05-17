@@ -1,71 +1,138 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"github.com/proj-go-5/accounts/internal/api"
 	store "github.com/proj-go-5/accounts/internal/repositories"
 	"github.com/proj-go-5/accounts/internal/services"
 	"github.com/proj-go-5/accounts/pkg/authorization"
+	"go.uber.org/fx"
 )
 
 func main() {
-	envService, err := services.NewEnvService(".env")
+	fx.New(
+		fx.Provide(NewEnvService),
+		fx.Provide(NewDb),
+		fx.Provide(store.NewAdminDBRepository),
+		fx.Provide(NewRedisCli),
+		fx.Provide(store.NewRedisCacheRepository),
+		fx.Provide(services.NewCacheService),
+		fx.Provide(services.NewHashService),
+		fx.Provide(services.NewAdminService),
+		fx.Provide(NewJwtService),
+		fx.Provide(services.NewAuthService),
+		fx.Provide(services.NewAppService),
+		fx.Provide(api.New),
+
+		fx.Invoke(runServer),
+	).Run()
+}
+
+func runServer(lifecycle fx.Lifecycle, api *api.API, e *services.Env) {
+	serverPort := e.Get("ACCOUNTS_SERVER_PORT", "8080")
+
+	log.Printf("Runing servier on %v port\n", serverPort)
+
+	r, err := api.CreateRouter()
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 		return
 	}
 
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go func() {
+				if err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), r); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			return nil
+		},
+	})
+}
+
+func NewEnvService() (*services.Env, error) {
+	envService, err := services.NewEnvService(".env")
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return envService, nil
+}
+
+func NewJwtService(e *services.Env) (*authorization.JwtService, error) {
+	jwtSecret := e.Get("JWT_SECRET", "secret")
+	jwtExpiration, err := strconv.Atoi(e.Get("JWT_EXPIRATION_HOURS", "24"))
+	if err != nil {
+		return nil, err
+	}
+	return authorization.NewJwtService(jwtSecret, jwtExpiration), nil
+}
+
+func NewDb(lifecycle fx.Lifecycle, e *services.Env) (*sqlx.DB, error) {
 	dbDataSource := fmt.Sprintf("user=%v password=%v dbname=%v host=%v port=%v sslmode=%v",
-		envService.Get("ACCOUNTS_DB_USER", "accouunts"),
-		envService.Get("ACCOUNTS_DB_PASSWORD", "accouunts"),
-		envService.Get("ACCOUNTS_DB_NAME", "accouunts"),
-		envService.Get("ACCOUNTS_DB_URL", "localhost"),
-		envService.Get("ACCOUNTS_DB_PORT", "5432"),
-		envService.Get("ACCOUNTS_DB_SSL_MODE", "disable"),
+		e.Get("ACCOUNTS_DB_USER", "accouunts"),
+		e.Get("ACCOUNTS_DB_PASSWORD", "accouunts"),
+		e.Get("ACCOUNTS_DB_NAME", "accouunts"),
+		e.Get("ACCOUNTS_DB_URL", "localhost"),
+		e.Get("ACCOUNTS_DB_PORT", "5432"),
+		e.Get("ACCOUNTS_DB_SSL_MODE", "disable"),
 	)
 
 	db, err := sqlx.Open("postgres", dbDataSource)
 	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	defer db.Close()
-
-	adminService := services.NewAdminService(store.NewAdminDBRepository(db))
-	cacheService := services.NewCacheService(store.NewMemoryCacheRepository())
-
-	jwtSecret := envService.Get("JWT_SECRET", "secret")
-	jwtExpiration, _ := strconv.Atoi(envService.Get("JWT_EXPIRATION_HOURS", "24"))
-	jwtService := authorization.NewJwtService(jwtSecret, jwtExpiration)
-
-	appService := &services.AppService{
-		Admin: adminService,
-		Jwt:   jwtService,
-		Cache: cacheService,
-		Auth: services.NewAuthService(
-			adminService, cacheService, jwtService,
-		),
+		return nil, err
 	}
 
-	a := api.New(appService)
-
-	r, err := a.CreateRouter()
+	err = db.Ping()
 	if err != nil {
-		log.Fatal(err)
-		return
+		return nil, err
 	}
 
-	serverPort := envService.Get("ACCOUNTS_SERVER_PORT", "8080")
+	lifecycle.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			log.Println("closing DB connection")
+			return db.Close()
+		},
+	})
 
-	fmt.Printf("Runing servier on %v port\n", serverPort)
+	return db, nil
+}
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), r); err != nil {
-		log.Printf("Server run error: %s", err)
+func NewRedisCli(lifecycle fx.Lifecycle, e *services.Env) (*redis.Client, error) {
+	redisAddres := fmt.Sprintf("%v:%v",
+		e.Get("ACCOUNTS_REDIS_HOST", "localhost"),
+		e.Get("ACCOUNTS_REDIS_PORT", "6379"),
+	)
+
+	redisDb, err := strconv.Atoi(e.Get("ACCOUNTS_REDIS_DB", "0"))
+	if err != nil {
+		return nil, err
 	}
+
+	redisCli := redis.NewClient(&redis.Options{
+		Addr:     redisAddres,
+		Password: e.Get("ACCOUNTS_REDIS_PASSWORD", ""),
+		DB:       redisDb,
+	})
+
+	err = redisCli.Ping().Err()
+	if err != nil {
+		return nil, err
+	}
+
+	lifecycle.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			log.Println("closing redis connection")
+			return redisCli.Close()
+		},
+	})
+	return redisCli, nil
 }
