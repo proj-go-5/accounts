@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/proj-go-5/accounts/internal/entities"
 	store "github.com/proj-go-5/accounts/internal/repositories"
 	"github.com/proj-go-5/accounts/internal/services"
@@ -20,12 +22,22 @@ func main() {
 		return
 	}
 
-	adminDbRepository, err := store.NewAdminDBRepository(envService)
+	dbDataSource := fmt.Sprintf("user=%v password=%v dbname=%v host=%v port=%v sslmode=%v",
+		envService.Get("ACCOUNTS_DB_USER", "accouunts"),
+		envService.Get("ACCOUNTS_DB_PASSWORD", "accouunts"),
+		envService.Get("ACCOUNTS_DB_NAME", "accouunts"),
+		envService.Get("ACCOUNTS_DB_URL", "localhost"),
+		envService.Get("ACCOUNTS_DB_PORT", "5432"),
+		envService.Get("ACCOUNTS_DB_SSL_MODE", "disable"),
+	)
+
+	db, err := sqlx.Open("postgres", dbDataSource)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 		return
 	}
-	defer adminDbRepository.Db.Close()
+	adminDbRepository := store.NewAdminDBRepository(db)
+	defer db.Close()
 
 	hashService := services.NewHashService()
 	adminService := services.NewAdminService(adminDbRepository, hashService)
