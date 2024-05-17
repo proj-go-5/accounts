@@ -55,7 +55,3 @@ func (r *AdminDbRepository) Get(login string) (*entities.AdminWithPassword, erro
 
 	return &admins[0], nil
 }
-
-func (r *AdminDbRepository) Close() {
-	r.db.Close()
-}

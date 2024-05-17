@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -31,13 +32,10 @@ func main() {
 		fx.Provide(api.New),
 
 		fx.Invoke(runServer),
-	)
+	).Run()
 }
 
-func runServer(api *api.API, e *services.Env, cr services.CacheRepository, ar services.AdminRepository) {
-	defer cr.Close()
-	defer ar.Close()
-
+func runServer(lifecycle fx.Lifecycle, api *api.API, e *services.Env) {
 	serverPort := e.Get("ACCOUNTS_SERVER_PORT", "8080")
 
 	log.Printf("Runing servier on %v port\n", serverPort)
@@ -48,9 +46,16 @@ func runServer(api *api.API, e *services.Env, cr services.CacheRepository, ar se
 		return
 	}
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), r); err != nil {
-		log.Printf("Server run error: %s", err)
-	}
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			go func() {
+				if err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), r); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			return nil
+		},
+	})
 }
 
 func NewEnvService() (*services.Env, error) {
@@ -71,8 +76,7 @@ func NewJwtService(e *services.Env) (*authorization.JwtService, error) {
 	return authorization.NewJwtService(jwtSecret, jwtExpiration), nil
 }
 
-func NewDb(e *services.Env) (*sqlx.DB, error) {
-
+func NewDb(lifecycle fx.Lifecycle, e *services.Env) (*sqlx.DB, error) {
 	dbDataSource := fmt.Sprintf("user=%v password=%v dbname=%v host=%v port=%v sslmode=%v",
 		e.Get("ACCOUNTS_DB_USER", "accouunts"),
 		e.Get("ACCOUNTS_DB_PASSWORD", "accouunts"),
@@ -86,10 +90,23 @@ func NewDb(e *services.Env) (*sqlx.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	lifecycle.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			log.Println("closing DB connection")
+			return db.Close()
+		},
+	})
+
 	return db, nil
 }
 
-func NewRedisCli(e *services.Env) (*redis.Client, error) {
+func NewRedisCli(lifecycle fx.Lifecycle, e *services.Env) (*redis.Client, error) {
 	redisAddres := fmt.Sprintf("%v:%v",
 		e.Get("ACCOUNTS_REDIS_HOST", "localhost"),
 		e.Get("ACCOUNTS_REDIS_PORT", "6379"),
@@ -110,5 +127,12 @@ func NewRedisCli(e *services.Env) (*redis.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	lifecycle.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			log.Println("closing redis connection")
+			return redisCli.Close()
+		},
+	})
 	return redisCli, nil
 }

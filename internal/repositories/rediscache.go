@@ -29,7 +29,3 @@ func (r *RedisCache) Set(key, value string, ttl time.Duration) error {
 	r.cli.Set(key, value, ttl)
 	return nil
 }
-
-func (r *RedisCache) Close() {
-	r.cli.Close()
-}

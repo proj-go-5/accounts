@@ -7,7 +7,6 @@ import (
 type CacheRepository interface {
 	Get(key string) (value string, exists bool, error error)
 	Set(key, value string, ttl time.Duration) error
-	Close()
 }
 
 type Cache struct {

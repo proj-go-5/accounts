@@ -10,7 +10,6 @@ type AdminRepository interface {
 	Save(*entities.AdminWithPassword) (*entities.Admin, error)
 	List() ([]*entities.Admin, error)
 	Get(string) (*entities.AdminWithPassword, error)
-	Close()
 }
 
 type Admin struct {

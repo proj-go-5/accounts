@@ -30,7 +30,7 @@ create .env file (see .env.example)
 
 Up db and redis server:
 ```sh
-docker-compose docker-compose.yml up
+docker-compose up
 ```
 
 Create db tables:
