@@ -3,6 +3,8 @@ package store
 import (
 	"sync"
 	"time"
+
+	"github.com/proj-go-5/accounts/internal/services"
 )
 
 type MemoryCache struct {
@@ -10,7 +12,7 @@ type MemoryCache struct {
 	store map[string]string
 }
 
-func NewMemoryCacheRepository() *MemoryCache {
+func NewMemoryCacheRepository() services.CacheRepository {
 	return &MemoryCache{
 		store: make(map[string]string),
 	}

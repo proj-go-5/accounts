@@ -4,53 +4,54 @@ import (
 	"sync"
 
 	"github.com/proj-go-5/accounts/internal/entities"
+	"github.com/proj-go-5/accounts/internal/services"
 )
 
-type UserMemoryRepository struct {
-	mx    sync.Mutex
-	users []*entities.AdminWithPassword
+type AdminMemoryRepository struct {
+	mx     sync.Mutex
+	admins []*entities.AdminWithPassword
 }
 
-func NewUserMemoryRepository() *UserMemoryRepository {
-	return &UserMemoryRepository{users: make([]*entities.AdminWithPassword, 0)}
+func NewAdminMemoryRepository() services.AdminRepository {
+	return &AdminMemoryRepository{admins: make([]*entities.AdminWithPassword, 0)}
 }
 
-func (r *UserMemoryRepository) Save(u *entities.AdminWithPassword) (*entities.Admin, error) {
+func (r *AdminMemoryRepository) Save(u *entities.AdminWithPassword) (*entities.Admin, error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 
 	if u.ID == 0 {
-		u.ID = int64(len(r.users) + 1)
+		u.ID = int64(len(r.admins) + 1)
 	}
 
-	r.users = append(r.users, u)
+	r.admins = append(r.admins, u)
 	return u.WithoutPassword(), nil
 }
 
-func (r *UserMemoryRepository) List() ([]*entities.Admin, error) {
+func (r *AdminMemoryRepository) List() ([]*entities.Admin, error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 
-	users := make([]*entities.Admin, 0)
+	admins := make([]*entities.Admin, 0)
 
-	for _, u := range r.users {
-		users = append(users, u.WithoutPassword())
+	for _, u := range r.admins {
+		admins = append(admins, u.WithoutPassword())
 	}
 
-	return users, nil
+	return admins, nil
 }
 
-func (r *UserMemoryRepository) Get(login string) (*entities.AdminWithPassword, error) {
+func (r *AdminMemoryRepository) Get(login string) (*entities.AdminWithPassword, error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 
-	var dbUser *entities.AdminWithPassword
+	var dbAdmin *entities.AdminWithPassword
 
-	for _, user := range r.users {
-		if user.Login == login {
-			dbUser = user
+	for _, admin := range r.admins {
+		if admin.Login == login {
+			dbAdmin = admin
 			break
 		}
 	}
-	return dbUser, nil
+	return dbAdmin, nil
 }
