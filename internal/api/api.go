@@ -13,7 +13,7 @@ type API struct {
 	service *services.AppService
 }
 
-func New(s *services.AppService) *API {
+func NewApi(s *services.AppService) *API {
 	return &API{
 		service: s,
 	}
