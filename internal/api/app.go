@@ -18,6 +18,9 @@ import (
 type App struct {
 	providers  []interface{}
 	envService *services.Env
+	app        *fx.App
+
+	Service *services.AppService
 }
 
 func NewApp() (*App, error) {
@@ -39,27 +42,54 @@ func NewApp() (*App, error) {
 	return &App{providers: providers, envService: envService}, nil
 }
 
-func (a *App) Run() {
+func (a *App) makeApp() error {
 	err := a.addAdminRepositoryProvider()
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
 	err = a.addCacheRepositoryProvider()
 	if err != nil {
 		log.Fatal(err)
-		return
+		return err
 	}
 
-	fx.New(
+	app := fx.New(
 		fx.Provide(a.providers...),
 
 		fx.Invoke(a.runServer),
-	).Run()
+	)
+	a.app = app
+
+	return nil
 }
 
-func (a *App) runServer(lifecycle fx.Lifecycle, api *API, e *services.Env) {
+func (a *App) Start() error {
+	if err := a.makeApp(); err != nil {
+		return err
+	}
+
+	return a.app.Start(context.Background())
+}
+
+func (a *App) Run() error {
+	if err := a.makeApp(); err != nil {
+		return err
+	}
+
+	a.app.Run()
+	return nil
+}
+
+func (a *App) Done() {
+	a.app.Done()
+}
+
+func (a *App) Stop() error {
+	return a.app.Stop(context.Background())
+}
+
+func (a *App) runServer(lifecycle fx.Lifecycle, api *API, e *services.Env, as *services.AppService) {
 	serverPort := e.Get("ACCOUNTS_SERVER_PORT", "8080")
 
 	log.Printf("Runing servier on %v port\n", serverPort)
@@ -69,6 +99,8 @@ func (a *App) runServer(lifecycle fx.Lifecycle, api *API, e *services.Env) {
 		log.Fatal(err)
 		return
 	}
+
+	a.Service = as
 
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

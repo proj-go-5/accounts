@@ -11,7 +11,7 @@ type Env struct {
 }
 
 func NewEnvService(variablesFilePath string) (*Env, error) {
-	err := godotenv.Load(".env")
+	err := godotenv.Load(variablesFilePath)
 	if err != nil {
 		return nil, err
 	}

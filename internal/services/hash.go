@@ -1,6 +1,8 @@
 package services
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"golang.org/x/crypto/bcrypt"
+)
 
 var workFactor = 14
 
